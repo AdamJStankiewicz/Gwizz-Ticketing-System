@@ -32,6 +32,13 @@ class storage:
         with open("storage/emails.json", "w") as outfile:
             json.dump(storage.email_data,outfile)
 
+    def update_storage():
+        with open("storage/storage.json", "w") as outfile:
+            json.dump(storage.data,outfile)
+        
+        with open("storage/emails.json", "w") as outfile:
+            json.dump(storage.email_data,outfile)
+        
 
     def retrieve_data():
         if not os.path.isfile(main_storage_path):
@@ -53,7 +60,23 @@ class storage:
 
     def check_for_email(email):
         storage.retrieve_data()
-        return str(email in storage.email_data)
+        return email in storage.email_data
+    
+    def check_for_uuid(id):
+        storage.retrieve_data()
+        return id in storage.data
+    
+    def retrieve_uuid(email):
+        storage.retrieve_data()
+        if email in storage.email_data:
+            return str(storage.email_data[email])
+
+        return str("Email: " + email + " Was not found.")
+
+    def retrieve_email(id):
+        storage.retrieve_data()
+        if id in storage.data:
+            return str(storage.data[id]["email"])
 
 class ticket:
     def create_ticket(data):
@@ -66,7 +89,7 @@ class ticket:
         if data["email"] != "":
             if data["email"] in storage.email_data:
                 res["status"] = "1"
-                res["id"] = ticket.retrive_uuid(data["email"])
+                res["id"] = storage.retrieve_uuid(data["email"])
                 res["ticket"] = ticket.read_ticket_by_email(data["email"])
                 return res
 
@@ -75,6 +98,32 @@ class ticket:
         res["id"] = new_id
         res["ticket"] = ticket_data
         
+        return res
+
+    def remove_ticket(id):
+        storage.retrieve_data()
+        res = {"status" : "0"}
+
+        if storage.check_for_uuid(id):
+            email = storage.retrieve_email(id)
+            del storage.email_data[email]
+        del storage.data[id]
+
+        storage.update_storage()
+        return res
+
+    def remove_ticket_by_email(email):
+        storage.retrieve_data()
+        res = {"status" : "0"}
+
+        if storage.check_for_email(email):
+            id = storage.retrieve_uuid(email)
+            del storage.data[id]
+            del storage.email_data[email]
+        else:
+            res["status"] = "1"
+        
+        storage.update_storage()
         return res
 
     def read_all_tickets():
@@ -91,18 +140,10 @@ class ticket:
 
     def read_ticket_by_email(email):
         storage.retrieve_data()
-
         if email in storage.email_data:
             return storage.data[storage.email_data[email]]
         
         return str("Ticket with EMAIL: " + email + " Was not found.")
-
-    def retrive_uuid(email):
-        storage.retrieve_data()
-        if email in storage.email_data:
-            return storage.email_data[email]
-
-        return str("Email: " + email + " Was not found.")
 
     def create_uuid():
         id = str(uuid.uuid1())
@@ -132,5 +173,13 @@ def check_for_email(email):
 @app.route('/upload', methods=['GET','POST'])
 def upload_ticket():
     return ticket.create_ticket(request.json)
+
+@app.route('/remove_ticket_by_id/<string:id>/', methods=['GET','POST'])
+def remove_ticket_by_id(id):
+    return ticket.remove_ticket(id)
+
+@app.route('/remove_ticket_by_email/<string:email>/', methods=['GET','POST'])
+def remove_ticket_by_email(email):
+    return ticket.remove_ticket_by_email(email)
 
 socketio.run(app,host="0.0.0.0",port=1477, allow_unsafe_werkzeug=True, debug=True)
