@@ -2,10 +2,7 @@ from flask import *
 from flask_socketio import SocketIO, emit
 
 import uuid
-from uuid import UUID
-
-import json
-import os
+import sqlite3
 
 main_storage_path = 'storage/storage.json'
 email_storage_path = 'storage/emails.json'
@@ -13,138 +10,128 @@ email_storage_path = 'storage/emails.json'
 app = Flask(__name__)
 socketio = SocketIO(app)
 
-class storage:
-    data = {}
-    email_data = {}
+connection = sqlite3.connect('gts.db', check_same_thread=False)
+cursor = connection.cursor()
 
-    def store_ticket(id,new_ticket):
-        if storage.data == {}:
-            storage.retrieve_data()
+class db:
+    def initiate_db():
+        sql_command = """CREATE TABLE emp (
+        UUID VARCHAR(36),
+        desc VARCHAR(300),
+        email VARCHAR(50)
+        );"""
+        cursor.execute(sql_command)
 
-        storage.data[id] = new_ticket
+    def print_db():
+        cursor.execute("SELECT * FROM emp")
+        ans = cursor.fetchall()
 
-        if new_ticket["email"] != "":
-            storage.email_data[new_ticket["email"]] = id
-
-        with open("storage/storage.json", "w") as outfile:
-            json.dump(storage.data,outfile)
-        
-        with open("storage/emails.json", "w") as outfile:
-            json.dump(storage.email_data,outfile)
-
-    def update_storage():
-        with open("storage/storage.json", "w") as outfile:
-            json.dump(storage.data,outfile)
-        
-        with open("storage/emails.json", "w") as outfile:
-            json.dump(storage.email_data,outfile)
-        
-
-    def retrieve_data():
-        if not os.path.isfile(main_storage_path):
-            print("Storage file does not exist. It will be created once the first ticket has been created.")
-            return
-        
-        with open('storage/storage.json', 'r') as openfile:
-            json_object = json.load(openfile)
-            storage.data = json_object
-
-        if not os.path.isfile(email_storage_path):
-            print("Email storage file does not exist. It will be created once the first ticket has been created.")
-            return
-        
-        with open('storage/emails.json', 'r') as openfile:
-            json_object = json.load(openfile)
-            storage.email_data = json_object
-
-
-    def check_for_email(email):
-        storage.retrieve_data()
-        return email in storage.email_data
+        return ans
     
-    def check_for_uuid(id):
-        storage.retrieve_data()
-        return id in storage.data
+    def store_ticket(new_id,new_ticket):
+        id = new_id
+        desc = new_ticket["desc"]
+        email = new_ticket["email"]
+        db.insert(id,desc,email)
+
+    def delete_ticket_by_id(id):
+        if not db.exists(id):
+            return
+        cursor.execute("DELETE FROM emp WHERE UUID = (?)", (id,))
+        print("Ticket removed from database!")
+        connection.commit()
+        return id
+
+    def delete_ticket_by_email(email):
+        if not db.exists("",email):
+            return
+        id = ticket.get_ticket_by_email(email)["id"]
+        cursor.execute("DELETE FROM emp WHERE UUID = (?)", (id,))
+        print("Ticket removed from database!")
+        connection.commit()
+        return id
+
+    def insert(id,desc,email):
+        cursor.execute("INSERT INTO emp VALUES (?, ?, ?)", (id, desc, email))
+        print("New ticket added to database!")
+        connection.commit()
     
-    def retrieve_uuid(email):
-        storage.retrieve_data()
-        if email in storage.email_data:
-            return str(storage.email_data[email])
-
-        return str("Email: " + email + " Was not found.")
-
-    def retrieve_email(id):
-        storage.retrieve_data()
-        if id in storage.data:
-            return str(storage.data[id]["email"])
+    def exists(id="",email=""):
+        cursor.execute("""SELECT UUID
+                            ,email
+                    FROM emp
+                    WHERE UUID=?
+                        OR email=?""",
+                    (id, email))
+        
+        result = cursor.fetchone()
+        return result
 
 class ticket:
     def create_ticket(data):
         ticket_data = data
         new_id = ticket.create_uuid()
-        res = { "id" : "",
-                "status" : "",
-                "ticket" : ""}
+        new_email = data["email"]
 
-        if data["email"] != "":
-            if data["email"] in storage.email_data:
-                res["status"] = "1"
-                res["id"] = storage.retrieve_uuid(data["email"])
-                res["ticket"] = ticket.read_ticket_by_email(data["email"])
-                return res
+        res = {}
 
-        storage.store_ticket(new_id, ticket_data)
+        if db.exists(new_id,new_email):
+            res["status"] = "1"
+            print(ticket.get_ticket_by_email(new_email))
+            res["id"] = ticket.get_ticket_by_email(new_email)["id"]
+            return res
+            
+        db.store_ticket(new_id, ticket_data)
         res["status"] = "0"
         res["id"] = new_id
         res["ticket"] = ticket_data
         
         return res
 
-    def remove_ticket(id):
-        storage.retrieve_data()
-        res = {"status" : "0"}
+    def get_ticket_by_id(id):
+        cursor.execute("SELECT desc, email FROM emp WHERE UUID = ?",(id,))
+        
+        result = cursor.fetchone()
+        print("RESULT: ", result)
+        if result:
+            res = {"desc" : result[0],
+                   "email" : result[1]}
+            return res
+        return None
 
-        if storage.check_for_uuid(id):
-            email = storage.retrieve_email(id)
-            del storage.email_data[email]
-        del storage.data[id]
+    def get_ticket_by_email(email):
+        cursor.execute("SELECT desc, UUID FROM emp WHERE email = ?",(email,))
 
-        storage.update_storage()
-        return res
+        result = cursor.fetchone()
+        print("RESULT: ", result)
+        if result:
+            res = {"desc" : result[0],
+                   "id" : result[1]}
+            return res
+        return str("EMAIL: " + email + " Was not found in the database")
+
+    def get_email(email):
+        exists = db.exists("",email)
+
+        if exists:
+            return exists[1]
+        return None
+
+    def get_uuid(id):
+        exists = db.exists(id,"")
+
+        if exists:
+            return exists[0]
+        return None
+
+    def remove_ticket_by_id(id):
+        res = db.delete_ticket_by_id(id)
+        return str("Removed Ticket: " + res + " From Database")
 
     def remove_ticket_by_email(email):
-        storage.retrieve_data()
-        res = {"status" : "0"}
-
-        if storage.check_for_email(email):
-            id = storage.retrieve_uuid(email)
-            del storage.data[id]
-            del storage.email_data[email]
-        else:
-            res["status"] = "1"
-        
-        storage.update_storage()
-        return res
-
-    def read_all_tickets():
-        storage.retrieve_data()
-        return storage.data
-
-    def read_ticket(id):
-        storage.retrieve_data()
-
-        if id in storage.data:
-            return storage.data[id]
-
-        return str("Ticket with UUID: " + id + " Was not found.")
-
-    def read_ticket_by_email(email):
-        storage.retrieve_data()
-        if email in storage.email_data:
-            return storage.data[storage.email_data[email]]
-        
-        return str("Ticket with EMAIL: " + email + " Was not found.")
-
+        res = db.delete_ticket_by_email(email)
+        return str("Removed Ticket: " + res + " From Database")
+    
     def create_uuid():
         id = str(uuid.uuid1())
         return id
@@ -155,20 +142,15 @@ def main():
 
 @app.route('/tickets/', methods=['GET'])
 def get_tickets():
-    ticket.read_all_tickets()
+    return db.print_db()
 
 @app.route('/ticket_by_id/<string:id>/', methods=['GET'])
 def get_ticket(id):
-    return ticket.read_ticket(id)
+    return ticket.get_ticket_by_id(id)
 
 @app.route('/ticket_by_email/<string:email>/', methods=['GET'])
 def get_ticket_by_email(email):
-    return ticket.read_ticket_by_email(email)
-
-@app.route('/check_for_email/<string:email>/', methods=['GET'])
-def check_for_email(email):
-    return storage.check_for_email(email)
-
+    return ticket.get_ticket_by_email(email)
 
 @app.route('/upload', methods=['GET','POST'])
 def upload_ticket():
@@ -176,10 +158,12 @@ def upload_ticket():
 
 @app.route('/remove_ticket_by_id/<string:id>/', methods=['GET','POST'])
 def remove_ticket_by_id(id):
-    return ticket.remove_ticket(id)
+    return ticket.remove_ticket_by_id(id)
 
 @app.route('/remove_ticket_by_email/<string:email>/', methods=['GET','POST'])
 def remove_ticket_by_email(email):
     return ticket.remove_ticket_by_email(email)
 
-socketio.run(app,host="0.0.0.0",port=1477, allow_unsafe_werkzeug=True, debug=True)
+
+socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
+print("GTS RUNNING")
