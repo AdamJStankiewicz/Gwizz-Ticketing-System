@@ -76,7 +76,6 @@ class db:
         res = {}
         for row in ans:
             res[row[0]] = {"desc" : row[1], "email" : row[2]}
-        print(res)
         return res
     
     def store_ticket(new_id,new_ticket):
