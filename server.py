@@ -1,6 +1,7 @@
 from flask import *
 from flask_socketio import SocketIO, emit
 
+import public_ip as ip
 import hashlib
 import uuid
 import sqlite3
@@ -26,7 +27,8 @@ def init():
         admin_info['password'] = security.new_password(password)
     
     print("G.T.S. INITIATED")
-
+    print("IP: " + ip.get(), "Port: 1477")
+    
 class security:
     def valid_password(password):
         admin_info = {}
