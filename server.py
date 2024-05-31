@@ -21,12 +21,9 @@ def init():
     admin_info = {}
     if not os.path.exists(admin_storage_path):
         password = input("Enter an admin password: ")
-        admin_info['password'] = security.new_password(password)
+        salt = input("Enter a salt word for better encryption: ")
+        security.new_password(password,salt)
         db.initiate_db()
-        admin_info['db_initiated'] = True
-
-    with open(admin_storage_path, 'w') as f:
-        json.dump(admin_info, f)
     
     print("G.T.S. INITIATED")
     print("IP: " + ip.get(), "Port: 1477")
@@ -38,21 +35,25 @@ class security:
             with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
         password_hash = admin_info['password']
-        return security.encrypt_password(password) == password_hash
+        password_salt = admin_info['salt']
+        return security.encrypt_password(password,password_salt) == password_hash
     
-    def new_password(password):
+    def new_password(password,salt):
         admin_info = {}
         if os.path.exists(admin_storage_path):
             with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
-        admin_info['password'] = security.encrypt_password(password)
+        admin_info['salt'] = salt
+        admin_info['password'] = security.encrypt_password(password,salt)
         with open(admin_storage_path, 'w') as f:
             json.dump(admin_info, f)
         
         return admin_info
 
-    def encrypt_password(string):
-        encoded_string = string.encode()
+    def encrypt_password(password,salt):
+        password = password + salt
+        print(password)
+        encoded_string = password.encode()
         sha256_hash = hashlib.sha256()
         sha256_hash.update(encoded_string)
         result = sha256_hash.hexdigest()
