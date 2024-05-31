@@ -6,7 +6,7 @@ import uuid
 import sqlite3
 import os
 
-main_storage_path = 'admin_info.json'
+admin_storage_path = 'admin_info.json'
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -21,7 +21,7 @@ def init():
         connection.commit()
 
     admin_info = {}
-    if not os.path.exists(main_storage_path):
+    if not os.path.exists(admin_storage_path):
         password = input("Enter an admin password: ")
         admin_info['password'] = security.new_password(password)
     
@@ -30,24 +30,24 @@ def init():
 class security:
     def valid_password(password):
         admin_info = {}
-        if os.path.exists(main_storage_path):
-            with open(main_storage_path, 'r') as f:
+        if os.path.exists(admin_storage_path):
+            with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
         password_hash = admin_info['password']
         return security.sha256(password) == password_hash
     
     def new_password(password):
         admin_info = {}
-        if os.path.exists(main_storage_path):
-            with open(main_storage_path, 'r') as f:
+        if os.path.exists(admin_storage_path):
+            with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
         admin_info['password'] = security.sha256(password)
-        with open(main_storage_path, 'w') as f:
+        with open(admin_storage_path, 'w') as f:
             json.dump(admin_info, f)
         
         return admin_info
 
-    def sha256(string):
+    def encrypt_password(string):
         encoded_string = string.encode()
         sha256_hash = hashlib.sha256()
         sha256_hash.update(encoded_string)
@@ -212,6 +212,4 @@ def remove_ticket():
 
 
 init()
-#print("poopymonkey: ", security.string_to_sha256("poopymonkey"))
-#app.run()
 socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
