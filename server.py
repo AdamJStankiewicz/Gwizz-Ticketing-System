@@ -72,8 +72,11 @@ class db:
     def print_db():
         cursor.execute("SELECT * FROM emp")
         ans = cursor.fetchall()
-
-        return ans
+        res = {}
+        for row in ans:
+            res[row[0]] = {"desc" : row[1], "email" : row[2]}
+        print(res)
+        return res
     
     def store_ticket(new_id,new_ticket):
         id = new_id
