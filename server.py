@@ -34,14 +34,14 @@ class security:
             with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
         password_hash = admin_info['password']
-        return security.sha256(password) == password_hash
+        return security.encrypt_password(password) == password_hash
     
     def new_password(password):
         admin_info = {}
         if os.path.exists(admin_storage_path):
             with open(admin_storage_path, 'r') as f:
                 admin_info = json.load(f)
-        admin_info['password'] = security.sha256(password)
+        admin_info['password'] = security.encrypt_password(password)
         with open(admin_storage_path, 'w') as f:
             json.dump(admin_info, f)
         

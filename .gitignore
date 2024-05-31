@@ -1,7 +1,3 @@
-# Storage files
-gts.db
-admin_info.json
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
