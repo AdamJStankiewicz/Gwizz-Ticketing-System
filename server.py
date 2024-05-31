@@ -17,14 +17,16 @@ cursor = connection.cursor()
 
 
 def init():
-    if not os.path.exists('gts.db'):
-        connection.execute("CREATE TABLE admin_info (password)")
-        connection.commit()
 
     admin_info = {}
     if not os.path.exists(admin_storage_path):
         password = input("Enter an admin password: ")
         admin_info['password'] = security.new_password(password)
+        db.initiate_db()
+        admin_info['db_initiated'] = True
+
+    with open(admin_storage_path, 'w') as f:
+        json.dump(admin_info, f)
     
     print("G.T.S. INITIATED")
     print("IP: " + ip.get(), "Port: 1477")
