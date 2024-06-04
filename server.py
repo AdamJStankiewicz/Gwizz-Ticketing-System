@@ -161,6 +161,14 @@ class ticket:
             return res
         return str("EMAIL: " + email + " Was not found in the database")
 
+    def get_tickets_by_date(date):
+        cur_db = db.print_db()
+        res = {}
+        for ticket in cur_db:
+            if date in cur_db[ticket]["time"]:
+                res[ticket] = cur_db[ticket]
+        return res
+
     def get_email(email):
         exists = db.exists("",email)
 
@@ -210,6 +218,10 @@ def get_ticket(id):
 def get_ticket_by_email(email):
     return ticket.get_ticket_by_email(email)
 
+@app.route('/tickets_by_date/<string:date>', methods=['GET','POST'])
+def get_tickets_by_date(date):
+    return ticket.get_tickets_by_date(date)
+
 @app.route('/upload', methods=['GET','POST'])
 def upload_ticket():
     return ticket.create_ticket(request.json)
@@ -217,7 +229,6 @@ def upload_ticket():
 @app.route('/remove_ticket/', methods=['GET','POST'])
 def remove_ticket():
     return ticket.remove_ticket(request.json)
-
 
 init()
 socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
