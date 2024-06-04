@@ -234,7 +234,5 @@ def upload_ticket():
 def remove_ticket():
     return ticket.remove_ticket(request.json)
 
-print(ticket.valid_email("test@mail.com"))
-
 init()
 socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
