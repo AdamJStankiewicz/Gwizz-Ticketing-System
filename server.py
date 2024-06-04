@@ -1,7 +1,7 @@
 from flask import *
 from flask_socketio import SocketIO, emit
 
-import public_ip as ip
+import datetime
 import hashlib
 import uuid
 import sqlite3
@@ -26,7 +26,7 @@ def init():
         db.initiate_db()
     
     print("G.T.S. INITIATED")
-    print("IP: " + ip.get(), "Port: 1477")
+    print("Current time: " + str(datetime.datetime.now()))
     
 class security:
     def valid_password(password):
@@ -65,7 +65,8 @@ class db:
         sql_command = """CREATE TABLE emp (
         UUID VARCHAR(36),
         desc VARCHAR(300),
-        email VARCHAR(50)
+        email VARCHAR(50),
+        time VARCHAR(50)
         );"""
         cursor.execute(sql_command)
         print("DATABASE INITIATED")
@@ -75,7 +76,7 @@ class db:
         ans = cursor.fetchall()
         res = {}
         for row in ans:
-            res[row[0]] = {"desc" : row[1], "email" : row[2]}
+            res[row[0]] = {"desc" : row[1], "email" : row[2], "time" : row[3]}
         return res
     
     def store_ticket(new_id,new_ticket):
@@ -102,7 +103,7 @@ class db:
         return str("Ticket with id " + id + " was removed from the database")
 
     def insert(id,desc,email):
-        cursor.execute("INSERT INTO emp VALUES (?, ?, ?)", (id, desc, email))
+        cursor.execute("INSERT INTO emp VALUES (?, ?, ?, ?)", (id, desc, email, str(datetime.datetime.now())))
         print("New ticket added to database!")
         connection.commit()
     
