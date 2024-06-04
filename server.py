@@ -1,6 +1,7 @@
 from flask import *
 from flask_socketio import SocketIO, emit
 
+import re
 import datetime
 import hashlib
 import uuid
@@ -17,8 +18,6 @@ cursor = connection.cursor()
 
 
 def init():
-
-    admin_info = {}
     if not os.path.exists(admin_storage_path):
         password = input("Enter an admin password: ")
         salt = input("Enter a salt word for better encryption: ")
@@ -123,12 +122,14 @@ class ticket:
         ticket_data = data
         new_id = ticket.create_uuid()
         new_email = data["email"]
-
         res = {}
 
-        if db.exists(new_id,new_email):
+        if not ticket.valid_email(new_email):
             res["status"] = "1"
-            print(ticket.get_ticket_by_email(new_email))
+            return res
+
+        if db.exists(new_id,new_email):
+            res["status"] = "2"
             res["id"] = ticket.get_ticket_by_email(new_email)["id"]
             return res
             
@@ -202,6 +203,9 @@ class ticket:
         id = str(uuid.uuid1())
         return id
 
+    def valid_email(email):
+        return bool(re.search(r"^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", email))    
+
 @app.route('/', methods=['GET'])
 def main():
     return "GTS Online"
@@ -229,6 +233,8 @@ def upload_ticket():
 @app.route('/remove_ticket/', methods=['GET','POST'])
 def remove_ticket():
     return ticket.remove_ticket(request.json)
+
+print(ticket.valid_email("test@mail.com"))
 
 init()
 socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
