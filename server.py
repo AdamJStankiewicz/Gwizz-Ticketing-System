@@ -2,6 +2,8 @@ from flask import *
 from flask_socketio import SocketIO, emit
 
 import re
+import requests
+from bs4 import BeautifulSoup
 import datetime
 import hashlib
 import uuid
@@ -65,7 +67,10 @@ class db:
         UUID VARCHAR(36),
         desc VARCHAR(300),
         email VARCHAR(50),
-        time VARCHAR(50)
+        time VARCHAR(50),
+        completed VARCHAR(1),
+        url VARCHAR(50),
+        title VARCHAR(50)
         );"""
         cursor.execute(sql_command)
         print("DATABASE INITIATED")
@@ -75,7 +80,7 @@ class db:
         ans = cursor.fetchall()
         res = {}
         for row in ans:
-            res[row[0]] = {"desc" : row[1], "email" : row[2], "time" : row[3]}
+            res[row[0]] = {"desc" : row[1], "email" : row[2], "time" : row[3], "completed" : row[4], "url" : row[5], "title" : row[6]}
         return res
     
     def store_ticket(new_id,new_ticket):
@@ -101,8 +106,19 @@ class db:
         connection.commit()
         return str("Ticket with id " + id + " was removed from the database")
 
+    def update_ticket(url, title, id, completed):
+        if completed:
+            print("ID:", id)
+            cursor.execute("UPDATE emp SET completed = ?, url = ?, title = ? WHERE UUID = ?", (1, url, title, id))
+            connection.commit()
+            return str("Ticket with id: " + id + " has been marked as completed, associated video info has been added")
+        else:
+            cursor.execute("UPDATE emp SET completed = ?, url = ?, title = ? WHERE UUID = ?", (0, "", "", id))
+            connection.commit()
+            return "Ticket with id: " + id + " has been marked as uncompleted, associated video info has been removed"
+
     def insert(id,desc,email):
-        cursor.execute("INSERT INTO emp VALUES (?, ?, ?, ?)", (id, desc, email, str(datetime.datetime.now())))
+        cursor.execute("INSERT INTO emp VALUES (?, ?, ?, ?, ?, ?, ?)", (id, desc, email, str(datetime.datetime.now()), 0, "", ""))
         print("New ticket added to database!")
         connection.commit()
     
@@ -177,6 +193,7 @@ class ticket:
             return exists[1]
         return None
 
+    
     def get_uuid(id):
         exists = db.exists(id,"")
 
@@ -188,16 +205,43 @@ class ticket:
         if not security.valid_password(data["password"]):
             return "ERROR: INVALID ADMIN PASSWORD"
 
-        if data["email"]:
-            if ticket.get_email(data["email"]):
-                return db.delete_ticket_by_email(data["email"])
-            return "ERROR: EMAIL NOT FOUND"
-        elif data["id"]:
-            if ticket.get_id(data["id"]):
-                return db.delete_ticket_by_id(data["id"])
-            return "ERROR: ID NOT FOUND"
+        if ticket.get_email(data["email"]):
+            return db.delete_ticket_by_email(data["email"])
+        elif ticket.get_uuid(data["id"]):
+            return db.delete_ticket_by_id(data["id"])
         else:
             return "ERROR: Invalid input. Please enter a valid ID or Email."
+
+    def update_ticket(data):
+        if not security.valid_password(data["password"]):
+            return "ERROR: INVALID ADMIN PASSWORD"
+        
+        id = data["id"]
+        completed = data["completed"]
+
+        if not completed:
+             return db.update_ticket("", "", id, completed)
+
+        url = data["url"]
+        title = ticket.get_video_title(url)
+        
+        if ticket.get_uuid(data["id"]):
+            id = data["id"]
+        elif ticket.get_email(data["email"]):
+            id = ticket.get_ticket_by_email(data["email"])["id"]
+        else:
+            return "ERROR: Invalid input."
+        
+        return db.update_ticket(url, title, id, completed)
+
+    def get_video_title(url):
+        r = requests.get(url)
+        soup = BeautifulSoup(r.text,"html.parser")
+        link = soup.find_all(name="title")[0]
+        res = str(link.text.strip(" - YouTube"))
+
+        return res
+
 
     def create_uuid():
         id = str(uuid.uuid1())
@@ -233,6 +277,10 @@ def upload_ticket():
 @app.route('/remove_ticket/', methods=['GET','POST'])
 def remove_ticket():
     return ticket.remove_ticket(request.json)
+
+@app.route('/update_ticket', methods=['GET','POST'])
+def update_ticket():
+    return ticket.update_ticket(request.json)
 
 init()
 socketio.run(app,host='0.0.0.0',port=1477, allow_unsafe_werkzeug=True, debug=False)
