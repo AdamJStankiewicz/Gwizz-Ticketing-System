@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
-import { useNavigate, useLocation } from 'react-router-dom';
 
-const homeImg = require('@/assets/images/homeImg.svg');
-const addImg = require('@/assets/images/addImg.svg');
-const searchImg = require('@/assets/images/searchImg.svg');
 const youtubeLogo = require('@/assets/images/youtubeLogo.png');
 const gwizzLogo = require('@/assets/images/glogo.png');
 
@@ -14,30 +10,9 @@ interface RequestItem {
   youtubeLink: string;
 }
 
+const defaultYouTubeLink = 'https://www.youtube.com/@Gwizz1027';
+
 const ViewRequestScreen: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const getActiveTab = () => {
-    switch (location.pathname) {
-      case '/':
-        return 'home';
-      case '/create-ticket':
-        return 'create';
-      case '/view-tickets':
-        return 'view';
-      default:
-        return '';
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState(getActiveTab);
-
-  const handleTabPress = (tab: string, url: string) => {
-    setActiveTab(tab);
-    navigate(url);
-  };
-
   const [searchText, setSearchText] = useState('');
   const [originalData, setOriginalData] = useState<RequestItem[]>([]);
   const [filteredData, setFilteredData] = useState<RequestItem[]>([]);
@@ -45,12 +20,18 @@ const ViewRequestScreen: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:1477/tickets/');
+        const response = await fetch('http://10.0.0.184:1477/tickets/');
         const textData = await response.text();
-        // Assuming the text data is JSON stringified
-        const data: RequestItem[] = JSON.parse(textData);
-        setOriginalData(data);
-        setFilteredData(data);
+        const dataObject = JSON.parse(textData);
+
+        const dataArray: RequestItem[] = Object.keys(dataObject).map(key => ({
+          id: key,
+          request: dataObject[key].desc,
+          youtubeLink: dataObject[key].url || defaultYouTubeLink,
+        }));
+
+        setOriginalData(dataArray);
+        setFilteredData(dataArray);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -72,11 +53,8 @@ const ViewRequestScreen: React.FC = () => {
   };
 
   const handleNavigation = (url: string) => {
-    if (url.startsWith('http')) {
-      window.open(url, '_blank');
-    } else {
-      navigate(url);
-    }
+    const finalUrl = url.startsWith('http') ? url : defaultYouTubeLink;
+    window.open(finalUrl, '_blank');
   };
 
   const renderItem = ({ item }: { item: RequestItem }) => (
@@ -90,23 +68,6 @@ const ViewRequestScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity onPress={() => handleTabPress('home', '/')}>
-          <View style={[styles.tabItem, activeTab === 'home' && styles.activeTab]}>
-            <Image source={homeImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleTabPress('create', '/create-ticket')}>
-          <View style={[styles.tabItem, activeTab === 'create' && styles.activeTab]}>
-            <Image source={addImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleTabPress('view', '/view-tickets')}>
-          <View style={[styles.tabItem, activeTab === 'view' && styles.activeTab]}>
-            <Image source={searchImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-      </View>
       <View style={styles.content}>
         <Text style={styles.header}>Request Previews</Text>
         <Text style={styles.subHeader}>In order to see the completed request, click on the YouTube icon.</Text>
@@ -135,26 +96,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#282828',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#333',
-    paddingVertical: "1%",
-    width: '100%',
-  },
-  tabItem: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#00b8c9',
-  },
-  tabImage: {
-    width: 40,
-    height: 40,
   },
   content: {
     flex: 1,
@@ -214,13 +155,17 @@ const styles = StyleSheet.create({
   },
   gwizzLogoContainer: {
     position: 'absolute',
-    top: '10%',
-    right: '2%',
+    top: '1%',
+    right: '1%',
   },
   gwizzLogo: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
   },
 });
 
 export default ViewRequestScreen;
+
+
+//when using the web: 127.0.0.1:1477
+//when using android: 10.0.0.184:1477

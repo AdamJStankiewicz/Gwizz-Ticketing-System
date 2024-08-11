@@ -1,64 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { useNavigate, useLocation } from 'react-router-dom';
 
-const homeImg = require('@/assets/images/homeImg.svg');
-const addImg = require('@/assets/images/addImg.svg');
-const searchImg = require('@/assets/images/searchImg.svg');
 const gwizzLogo = require('@/assets/images/glogo.png');
 
 const HomeScreen: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const getActiveTab = () => {
-    switch (location.pathname) {
-      case '/':
-        return 'home';
-      case '/create-ticket':
-        return 'create';
-      case '/view-tickets':
-        return 'view';
-      default:
-        return '';
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState(getActiveTab);
-
-  const handleTabPress = (tab: string, url: string) => {
-    setActiveTab(tab);
-    navigate(url);
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity onPress={() => handleTabPress('home', '/')}>
-          <View style={[styles.tabItem, activeTab === 'home' && styles.activeTab]}>
-            <Image source={homeImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleTabPress('create', '/create-ticket')}>
-          <View style={[styles.tabItem, activeTab === 'create' && styles.activeTab]}>
-            <Image source={addImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleTabPress('view', '/view-tickets')}>
-          <View style={[styles.tabItem, activeTab === 'view' && styles.activeTab]}>
-            <Image source={searchImg} style={styles.tabImage} />
-          </View>
-        </TouchableOpacity>
-      </View>
       <View style={styles.content}>
-        <Text style={styles.header}>Welcome to the Gwizz Ticketing System</Text>
+        <Text style={styles.header}>Gwizz Ticketing System</Text>
         <View style={styles.descriptionContainer}>
           <Text style={styles.description}>
-            Insert what you want to say in here. Write what you do and that kind of stuff. Say like, click on left=home, mid=add one, and right=search for tabs.
+          This platform is designed to help manage requests and tickets related to Godot, a popular open-source game engine. You can create your own ticket to request features or seek assistance. Additionally, you can view and track previous tickets to stay updated on any progress.
+
+          Feel free to check out my YouTube channel by clicking on the icon in the top right corner and subscribe for more updates and content.
+
           </Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.gwizzLogoContainer} onPress={() => navigate('https://www.youtube.com/@Gwizz1027')}>
+      <TouchableOpacity style={styles.gwizzLogoContainer} onPress={() => window.open('https://www.youtube.com/@Gwizz1027', '_blank')}>
         <Image source={gwizzLogo} style={styles.gwizzLogo} />
       </TouchableOpacity>
     </View>
@@ -69,26 +28,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#282828',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#333',
-    paddingVertical: "1%",
-    width: '100%',
-  },
-  tabItem: {
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#00b8c9',
-  },
-  tabImage: {
-    width: 40,
-    height: 40,
   },
   content: {
     flex: 1,
@@ -109,16 +48,18 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
+    width: '70%',
     color: '#a9a9a9',
+    textAlign: 'center',
   },
   gwizzLogoContainer: {
     position: 'absolute',
-    top: '10%',
-    right: '2%',
+    top: '1%',
+    right: '1%',
   },
   gwizzLogo: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
   },
 });
 

@@ -1,19 +1,60 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import CreateRequestScreen from '@/screens/CreateRequest';
-import HomeScreen from '@/screens/Home';
-import ViewRequestScreen from '@/screens/ViewRequest';
+import { View, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-const Tab = createBottomTabNavigator();
+const homeImg = require('@/assets/images/homeImg.png');
+const addImg = require('@/assets/images/addImg.png');
+const searchImg = require('@/assets/images/searchImg.png');
 
-const Tabs: React.FC = () => {
+
+interface TabsProps {
+  setCurrentView: (view: string) => void;
+}
+
+const Tabs: React.FC<TabsProps> = ({ setCurrentView }) => {
   return (
-    <Tab.Navigator>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="CreateRequest" component={CreateRequestScreen} />
-      <Tab.Screen name="PreviousRequests" component={ViewRequestScreen} />
-    </Tab.Navigator>
+    <View style={styles.tabsContainer}>
+      <TouchableOpacity onPress={() => setCurrentView('home')}>
+        <View style={styles.tabItem}>
+          <Image source={homeImg} style={styles.tabImage} />
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setCurrentView('create-ticket')}>
+        <View style={styles.tabItem}>
+          <Image source={addImg} style={styles.tabImage} />
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setCurrentView('view-tickets')}>
+        <View style={styles.tabItem}>
+          <Image source={searchImg} style={styles.tabImage} />
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 };
 
+const styles = StyleSheet.create({
+  tabsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#333',
+    paddingVertical: "1%",
+    width: '100%',
+  },
+  tabItem: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  tabImage: {
+    width: 40,
+    height: 40,
+  },
+});
+
 export default Tabs;
+
+
+
+
+
+
