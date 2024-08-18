@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0e9f3855-4098-4dbc-b360-bf72396bb362"
+      }
+    },
+    "android": {
+      "package": "com.roccolep1.gwizzticketingsystem"
+    }
+  }
+}

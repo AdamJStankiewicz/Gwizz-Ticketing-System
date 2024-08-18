@@ -1,5 +1,6 @@
-from flask import *
+from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 
 import re
 import requests
@@ -9,15 +10,16 @@ import hashlib
 import uuid
 import sqlite3
 import os
+import json 
 
 admin_storage_path = 'admin_info.json'
 
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app)
 
 connection = sqlite3.connect('gts.db', check_same_thread=False)
 cursor = connection.cursor()
-
 
 def init():
     if not os.path.exists(admin_storage_path):
@@ -247,12 +249,15 @@ class ticket:
         id = str(uuid.uuid1())
         return id
 
+
     def valid_email(email):
         return bool(re.search(r"^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", email))    
 
 @app.route('/', methods=['GET'])
 def main():
+    print("Hello")
     return "GTS Online"
+
 
 @app.route('/tickets/', methods=['GET'])
 def get_tickets():
