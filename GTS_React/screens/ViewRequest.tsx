@@ -8,6 +8,7 @@ interface RequestItem {
   id: string;
   request: string;
   youtubeLink: string;
+  completed: string; 
 }
 
 const defaultYouTubeLink = 'https://www.youtube.com/@Gwizz1027';
@@ -28,10 +29,13 @@ const ViewRequestScreen: React.FC = () => {
           id: key,
           request: dataObject[key].desc,
           youtubeLink: dataObject[key].url || defaultYouTubeLink,
+          completed: dataObject[key].completed,
         }));
 
-        setOriginalData(dataArray);
-        setFilteredData(dataArray);
+        const completedRequests = dataArray.filter(item => item.completed === "1");
+
+        setOriginalData(completedRequests);
+        setFilteredData(completedRequests);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
